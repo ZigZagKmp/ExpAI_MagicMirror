@@ -10,12 +10,10 @@
  */
 const path = require("path");
 const moment = require("moment");
-
 const zoneTable = require(path.join(__dirname, "windowsZones.json"));
 const Log = require("../../../js/logger");
 
 const CalendarFetcherUtils = {
-
 	/**
 	 * Calculate the time correction, either dst/std or full day in cases where
 	 * utc time is day before plus offset
@@ -23,7 +21,7 @@ const CalendarFetcherUtils = {
 	 * @param {Date} date the date on which this event happens
 	 * @returns {number} the necessary adjustment in hours
 	 */
-	calculateTimezoneAdjustment (event, date) {
+	calculateTimezoneAdjustment: function (event, date) {
 		let adjustHours = 0;
 		// if a timezone was specified
 		if (!event.start.tz) {
@@ -124,7 +122,7 @@ const CalendarFetcherUtils = {
 	 * @param {object} config The configuration object
 	 * @returns {string[]} the filtered events
 	 */
-	filterEvents (data, config) {
+	filterEvents: function (data, config) {
 		const newEvents = [];
 
 		// limitFunction doesn't do much limiting, see comment re: the dates
@@ -143,12 +141,7 @@ const CalendarFetcherUtils = {
 			Log.debug("Processing entry...");
 			const now = new Date();
 			const today = moment().startOf("day").toDate();
-			const future
-				= moment()
-					.startOf("day")
-					.add(config.maximumNumberOfDays, "days")
-					.subtract(1, "seconds") // Subtract 1 second so that events that start on the middle of the night will not repeat.
-					.toDate();
+			const future = moment().startOf("day").add(config.maximumNumberOfDays, "days").subtract(1, "seconds").toDate(); // Subtract 1 second so that events that start on the middle of the night will not repeat.
 			let past = today;
 
 			if (config.includePastEvents) {
@@ -254,6 +247,7 @@ const CalendarFetcherUtils = {
 
 				if (typeof event.rrule !== "undefined" && event.rrule !== null && !isFacebookBirthday) {
 					const rule = event.rrule;
+					let addedEvents = 0;
 
 					const pastMoment = moment(past);
 					const futureMoment = moment(future);
@@ -289,12 +283,8 @@ const CalendarFetcherUtils = {
 						futureLocal = futureMoment.toDate(); // future
 					}
 					Log.debug(`Search for recurring events between: ${pastLocal} and ${futureLocal}`);
-					let dates = rule.between(pastLocal, futureLocal, true, limitFunction);
+					const dates = rule.between(pastLocal, futureLocal, true, limitFunction);
 					Log.debug(`Title: ${event.summary}, with dates: ${JSON.stringify(dates)}`);
-					dates = dates.filter((d) => {
-						if (JSON.stringify(d) === "null") return false;
-						else return true;
-					});
 					// The "dates" array contains the set of dates within our desired date range range that are valid
 					// for the recurrence rule. *However*, it's possible for us to have a specific recurrence that
 					// had its date changed from outside the range to inside the range.  For the time being,
@@ -315,6 +305,11 @@ const CalendarFetcherUtils = {
 					// Loop through the set of date entries to see which recurrences should be added to our event list.
 					for (let d in dates) {
 						let date = dates[d];
+						// Remove the time information of each date by using its substring, using the following method:
+						// .toISOString().substring(0,10).
+						// since the date is given as ISOString with YYYY-MM-DDTHH:MM:SS.SSSZ
+						// (see https://momentjs.com/docs/#/displaying/as-iso-string/).
+						const dateKey = date.toISOString().substring(0, 10);
 						let curEvent = event;
 						let showRecurrence = true;
 
@@ -407,13 +402,6 @@ const CalendarFetcherUtils = {
 
 						let adjustDays = CalendarFetcherUtils.calculateTimezoneAdjustment(event, date);
 
-						// Remove the time information of each date by using its substring, using the following method:
-						// .toISOString().substring(0,10).
-						// since the date is given as ISOString with YYYY-MM-DDTHH:MM:SS.SSSZ
-						// (see https://momentjs.com/docs/#/displaying/as-iso-string/).
-						// This must be done after `date` is adjusted
-						const dateKey = date.toISOString().substring(0, 10);
-
 						// For each date that we're checking, it's possible that there is a recurrence override for that one day.
 						if (curEvent.recurrences !== undefined && curEvent.recurrences[dateKey] !== undefined) {
 							// We found an override, so for this recurrence, use a potentially different title, start date, and duration.
@@ -447,6 +435,7 @@ const CalendarFetcherUtils = {
 
 						if (showRecurrence === true) {
 							Log.debug(`saving event: ${description}`);
+							addedEvents++;
 							newEvents.push({
 								title: recurrenceTitle,
 								startDate: (adjustDays ? (adjustDays > 0 ? startDate.add(adjustDays, "hours") : startDate.subtract(Math.abs(adjustDays), "hours")) : startDate).format("x"),
@@ -527,7 +516,7 @@ const CalendarFetcherUtils = {
 	 * @param {string} msTZName the timezone name to lookup
 	 * @returns {string|null} the iana name or null of none is found
 	 */
-	getIanaTZFromMS (msTZName) {
+	getIanaTZFromMS: function (msTZName) {
 		// Get hash entry
 		const he = zoneTable[msTZName];
 		// If found return iana name, else null
@@ -539,7 +528,7 @@ const CalendarFetcherUtils = {
 	 * @param {object} event The event object to check.
 	 * @returns {string} The title of the event, or "Event" if no title is found.
 	 */
-	getTitleFromEvent (event) {
+	getTitleFromEvent: function (event) {
 		let title = "Event";
 		if (event.summary) {
 			title = typeof event.summary.val !== "undefined" ? event.summary.val : event.summary;
@@ -555,7 +544,7 @@ const CalendarFetcherUtils = {
 	 * @param {object} event The event object to check.
 	 * @returns {boolean} True if the event is a fullday event, false otherwise
 	 */
-	isFullDayEvent (event) {
+	isFullDayEvent: function (event) {
 		if (event.start.length === 8 || event.start.dateOnly || event.datetype === "date") {
 			return true;
 		}
@@ -578,7 +567,7 @@ const CalendarFetcherUtils = {
 	 * @param {string} filter The time to subtract from the end date to determine if an event should be shown
 	 * @returns {boolean} True if the event should be filtered out, false otherwise
 	 */
-	timeFilterApplies (now, endDate, filter) {
+	timeFilterApplies: function (now, endDate, filter) {
 		if (filter) {
 			const until = filter.split(" "),
 				value = parseInt(until[0]),
@@ -599,7 +588,7 @@ const CalendarFetcherUtils = {
 	 * @param {string} regexFlags flags that should be applied to the regex
 	 * @returns {boolean} True if the title should be filtered out, false otherwise
 	 */
-	titleFilterApplies (title, filter, useRegex, regexFlags) {
+	titleFilterApplies: function (title, filter, useRegex, regexFlags) {
 		if (useRegex) {
 			let regexFilter = filter;
 			// Assume if leading slash, there is also trailing slash

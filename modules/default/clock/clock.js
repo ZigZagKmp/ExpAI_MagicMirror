@@ -20,32 +20,32 @@ Module.register("clock", {
 		clockBold: false,
 		showDate: true,
 		showTime: true,
-		showWeek: false,
+		showWeek: true,
 		dateFormat: "dddd, LL",
 		sendNotifications: false,
 
 		/* specific to the analog clock */
 		analogSize: "200px",
-		analogFace: "simple", // options: 'none', 'simple', 'face-###' (where ### is 001 to 012 inclusive)
+		analogFace: "face-002", // options: 'none', 'simple', 'face-###' (where ### is 001 to 012 inclusive)
 		analogPlacement: "bottom", // options: 'top', 'bottom', 'left', 'right'
 		analogShowDate: "top", // OBSOLETE, can be replaced with analogPlacement and showTime, options: false, 'top', or 'bottom'
 		secondsColor: "#888888",
 
-		showSunTimes: false,
-		showMoonTimes: false, // options: false, 'times' (rise/set), 'percent' (lit percent), 'phase' (current phase), or 'both' (percent & phase)
-		lat: 47.630539,
-		lon: -122.344147
+		showSunTimes: true,
+		showMoonTimes: true,
+		lat: 40.003558,
+		lon: 116.323126
 	},
 	// Define required scripts.
-	getScripts () {
+	getScripts: function () {
 		return ["moment.js", "moment-timezone.js", "suncalc.js"];
 	},
 	// Define styles.
-	getStyles () {
+	getStyles: function () {
 		return ["clock_styles.css"];
 	},
 	// Define start sequence.
-	start () {
+	start: function () {
 		Log.info(`Starting module: ${this.name}`);
 
 		// Schedule update interval.
@@ -94,7 +94,7 @@ Module.register("clock", {
 		moment.locale(config.language);
 	},
 	// Override dom generator.
-	getDom () {
+	getDom: function () {
 		const wrapper = document.createElement("div");
 		wrapper.classList.add("clock-grid");
 
@@ -186,10 +186,10 @@ Module.register("clock", {
 			}
 			const untilNextEvent = moment.duration(moment(nextEvent).diff(now));
 			const untilNextEventString = `${untilNextEvent.hours()}h ${untilNextEvent.minutes()}m`;
-			sunWrapper.innerHTML
-				= `<span class="${isVisible ? "bright" : ""}"><i class="fas fa-sun" aria-hidden="true"></i> ${untilNextEventString}</span>`
-				+ `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunrise)}</span>`
-				+ `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunset)}</span>`;
+			sunWrapper.innerHTML =
+				`<span class="${isVisible ? "bright" : ""}"><i class="fas fa-sun" aria-hidden="true"></i> ${untilNextEventString}</span>` +
+				`<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunrise)}</span>` +
+				`<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunset)}</span>`;
 			digitalWrapper.appendChild(sunWrapper);
 		}
 
@@ -208,15 +208,11 @@ Module.register("clock", {
 				moonSet = nextMoonTimes.set;
 			}
 			const isVisible = now.isBetween(moonRise, moonSet) || moonTimes.alwaysUp === true;
-			const showFraction = ["both", "percent"].includes(this.config.showMoonTimes);
-			const showUnicode = ["both", "phase"].includes(this.config.showMoonTimes);
 			const illuminatedFractionString = `${Math.round(moonIllumination.fraction * 100)}%`;
-			const image = showUnicode ? [..."🌑🌒🌓🌔🌕🌖🌗🌘"][Math.floor(moonIllumination.phase * 8)] : "<i class=\"fas fa-moon\" aria-hidden=\"true\"></i>";
-
-			moonWrapper.innerHTML
-				= `<span class="${isVisible ? "bright" : ""}">${image} ${showFraction ? illuminatedFractionString : ""}</span>`
-				+ `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${moonRise ? formatTime(this.config, moonRise) : "..."}</span>`
-				+ `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${moonSet ? formatTime(this.config, moonSet) : "..."}</span>`;
+			moonWrapper.innerHTML =
+				`<span class="${isVisible ? "bright" : ""}"><i class="fas fa-moon" aria-hidden="true"></i> ${illuminatedFractionString}</span>` +
+				`<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${moonRise ? formatTime(this.config, moonRise) : "..."}</span>` +
+				`<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${moonSet ? formatTime(this.config, moonSet) : "..."}</span>`;
 			digitalWrapper.appendChild(moonWrapper);
 		}
 

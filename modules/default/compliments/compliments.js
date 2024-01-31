@@ -8,13 +8,12 @@ Module.register("compliments", {
 	// Module config defaults.
 	defaults: {
 		compliments: {
-			anytime: ["Hey there sexy!"],
-			morning: ["Good morning, handsome!", "Enjoy your day!", "How was your sleep?"],
-			afternoon: ["Hello, beauty!", "You look sexy!", "Looking good today!"],
-			evening: ["Wow, you look hot!", "You look nice!", "Hi, sexy!"],
-			"....-01-01": ["Happy new year!"]
+			morning: ["早安", "昨晚睡得怎样？", "要加油哦！"],
+			afternoon: ["你看起来很不错", "好！很有精神！", "加油鸭！"],
+			evening: ["晚安", "今晚做个好梦~", "精彩的一天就要结束了~"],
+			"....-01-01": ["新年快乐!"]
 		},
-		updateInterval: 30000,
+		updateInterval: 10000,
 		remoteFile: null,
 		fadeSpeed: 4000,
 		morningStartTime: 3,
@@ -28,12 +27,12 @@ Module.register("compliments", {
 	currentWeatherType: "",
 
 	// Define required scripts.
-	getScripts () {
+	getScripts: function () {
 		return ["moment.js"];
 	},
 
 	// Define start sequence.
-	async start () {
+	start: async function () {
 		Log.info(`Starting module: ${this.name}`);
 
 		this.lastComplimentIndex = -1;
@@ -55,7 +54,7 @@ Module.register("compliments", {
 	 * @param {string[]} compliments Array with compliments.
 	 * @returns {number} a random index of given array
 	 */
-	randomIndex (compliments) {
+	randomIndex: function (compliments) {
 		if (compliments.length === 1) {
 			return 0;
 		}
@@ -79,7 +78,7 @@ Module.register("compliments", {
 	 * Retrieve an array of compliments for the time of the day.
 	 * @returns {string[]} array with compliments for the time of the day.
 	 */
-	complimentArray () {
+	complimentArray: function () {
 		const hour = moment().hour();
 		const date = moment().format("YYYY-MM-DD");
 		let compliments = [];
@@ -115,7 +114,7 @@ Module.register("compliments", {
 	 * Retrieve a file from the local filesystem
 	 * @returns {Promise} Resolved when the file is loaded
 	 */
-	async loadComplimentFile () {
+	loadComplimentFile: async function () {
 		const isRemote = this.config.remoteFile.indexOf("http://") === 0 || this.config.remoteFile.indexOf("https://") === 0,
 			url = isRemote ? this.config.remoteFile : this.file(this.config.remoteFile);
 		const response = await fetch(url);
@@ -126,7 +125,7 @@ Module.register("compliments", {
 	 * Retrieve a random compliment.
 	 * @returns {string} a compliment
 	 */
-	getRandomCompliment () {
+	getRandomCompliment: function () {
 		// get the current time of day compliments list
 		const compliments = this.complimentArray();
 		// variable for index to next message to display
@@ -145,7 +144,7 @@ Module.register("compliments", {
 	},
 
 	// Override dom generator.
-	getDom () {
+	getDom: function () {
 		const wrapper = document.createElement("div");
 		wrapper.className = this.config.classes ? this.config.classes : "thin xlarge bright pre-line";
 		// get the compliment text
@@ -173,7 +172,7 @@ Module.register("compliments", {
 	},
 
 	// Override notification handler.
-	notificationReceived (notification, payload, sender) {
+	notificationReceived: function (notification, payload, sender) {
 		if (notification === "CURRENTWEATHER_TYPE") {
 			this.currentWeatherType = payload.type;
 		}

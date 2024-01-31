@@ -48,19 +48,14 @@ const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings
 		parser.on("item", (item) => {
 			const title = item.title;
 			let description = item.description || item.summary || item.content || "";
-			const pubdate = item.pubdate || item.published || item.updated || item["dc:date"] || item["a10:updated"];
+			const pubdate = item.pubdate || item.published || item.updated || item["dc:date"];
 			const url = item.url || item.link || "";
 
 			if (title && pubdate) {
+				const regex = /(<([^>]+)>)/gi;
+				description = description.toString().replace(regex, "");
 				// Convert HTML entities, codes and tag
-				description = htmlToText(description, {
-					wordwrap: false,
-					selectors: [
-						{ selector: "a", options: { ignoreHref: true, noAnchorUrl: true } },
-						{ selector: "br", format: "inlineSurround", options: { prefix: " " } },
-						{ selector: "img", format: "skip" }
-					]
-				});
+				description = htmlToText(description, { wordwrap: false });
 
 				items.push({
 					title: title,

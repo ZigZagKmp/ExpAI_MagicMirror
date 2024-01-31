@@ -10,11 +10,11 @@ Module.register("helloworld", {
 		text: "Hello World!"
 	},
 
-	getTemplate () {
+	getTemplate: function () {
 		return "helloworld.njk";
 	},
 
-	getTemplateData () {
+	getTemplateData: function () {
 		return this.config;
 	}
 });

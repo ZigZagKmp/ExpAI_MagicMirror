@@ -5,13 +5,12 @@
  * MIT Licensed.
  */
 const CalendarUtils = {
-
 	/**
 	 * Capitalize the first letter of a string
 	 * @param {string} string The string to capitalize
 	 * @returns {string} The capitalized string
 	 */
-	capFirst (string) {
+	capFirst: function (string) {
 		return string.charAt(0).toUpperCase() + string.slice(1);
 	},
 
@@ -22,7 +21,7 @@ const CalendarUtils = {
 	 * @param {number} timeFormat Specifies either 12 or 24-hour time format
 	 * @returns {moment.LocaleSpecification} formatted time
 	 */
-	getLocaleSpecification (timeFormat) {
+	getLocaleSpecification: function (timeFormat) {
 		switch (timeFormat) {
 			case 12: {
 				return { longDateFormat: { LT: "h:mm A" } };
@@ -44,7 +43,7 @@ const CalendarUtils = {
 	 * @param {number} maxTitleLines The max number of vertical lines before cutting event title
 	 * @returns {string} The shortened string
 	 */
-	shorten (string, maxLength, wrapEvents, maxTitleLines) {
+	shorten: function (string, maxLength, wrapEvents, maxTitleLines) {
 		if (typeof string !== "string") {
 			return "";
 		}
@@ -91,39 +90,23 @@ const CalendarUtils = {
 	/**
 	 * Transforms the title of an event for usage.
 	 * Replaces parts of the text as defined in config.titleReplace.
+	 * Shortens title based on config.maxTitleLength and config.wrapEvents
 	 * @param {string} title The title to transform.
-	 * @param {object} titleReplace object definition of parts to be replaced in the title
-	 *                 object definition:
-	 *                    search: {string,required} RegEx in format //x or simple string to be searched. For (birthday) year calcluation, the element matching the year must be in a RegEx group
-	 *                    replace: {string,required} Replacement string, may contain match group references (latter is required for year calculation)
-	 *                    yearmatchgroup: {number,optional} match group for year element
+	 * @param {object} titleReplace Pairs of strings to be replaced in the title
 	 * @returns {string} The transformed title.
 	 */
-	titleTransform (title, titleReplace) {
+	titleTransform: function (title, titleReplace) {
 		let transformedTitle = title;
-		for (let tr in titleReplace) {
-			let transform = titleReplace[tr];
-			if (typeof transform === "object") {
-				if (typeof transform.search !== "undefined" && transform.search !== "" && typeof transform.replace !== "undefined") {
-					let regParts = transform.search.match(/^\/(.+)\/([gim]*)$/);
-					let needle = new RegExp(transform.search, "g");
-					if (regParts) {
-						// the parsed pattern is a regexp with flags.
-						needle = new RegExp(regParts[1], regParts[2]);
-					}
+		for (let needle in titleReplace) {
+			const replacement = titleReplace[needle];
 
-					let replacement = transform.replace;
-					if (typeof transform.yearmatchgroup !== "undefined" && transform.yearmatchgroup !== "") {
-						const yearmatch = [...title.matchAll(needle)];
-						if (yearmatch[0].length >= transform.yearmatchgroup + 1 && yearmatch[0][transform.yearmatchgroup] * 1 >= 1900) {
-							let calcage = new Date().getFullYear() - yearmatch[0][transform.yearmatchgroup] * 1;
-							let searchstr = `$${transform.yearmatchgroup}`;
-							replacement = replacement.replace(searchstr, calcage);
-						}
-					}
-					transformedTitle = transformedTitle.replace(needle, replacement);
-				}
+			const regParts = needle.match(/^\/(.+)\/([gim]*)$/);
+			if (regParts) {
+				// the parsed pattern is a regexp.
+				needle = new RegExp(regParts[1], regParts[2]);
 			}
+
+			transformedTitle = transformedTitle.replace(needle, replacement);
 		}
 		return transformedTitle;
 	}
